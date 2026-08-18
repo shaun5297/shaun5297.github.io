@@ -1,2 +1,5 @@
 # 截图/视觉工具产物（本地预览用，不提交）
 .dsh-vision-toolkit/
+
+# macOS 系统文件
+.DS_Store

@@ -1,7 +1,16 @@
+const header = document.querySelector(".site-header");
+if (header) {
+  const onHeaderScroll = () => header.classList.toggle("is-scrolled", window.scrollY > 8);
+  onHeaderScroll();
+  window.addEventListener("scroll", onHeaderScroll, { passive: true });
+}
+
 const LANGUAGE_KEY = "yidong-portfolio-language";
 const toggle = document.querySelector(".language-toggle");
 const enLabel = document.querySelector(".lang-en");
 const zhLabel = document.querySelector(".lang-zh");
+const backToTop = document.querySelector(".back-to-top");
+const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 function applyLanguage(language) {
   const isChinese = language === "zh";
@@ -16,16 +25,17 @@ function applyLanguage(language) {
   zhLabel?.classList.toggle("active", isChinese);
   toggle?.setAttribute("aria-pressed", String(isChinese));
   toggle?.setAttribute("aria-label", isChinese ? "Switch to English" : "切换到中文");
+  backToTop?.setAttribute("aria-label", isChinese ? "返回顶部" : "Back to top");
   document.title = isChinese
-    ? "Yidong Shen — 机器视觉、具身智能与脑机接口"
-    : "Yidong Shen — Computer Vision & Embodied AI";
+    ? "Yidong Shen — 视觉与机器人工程师"
+    : "Yidong Shen — CV & Robotics Engineer";
 
   window.localStorage.setItem(LANGUAGE_KEY, language);
   window.dispatchEvent(new CustomEvent("languagechange"));
 }
 
-const preferredLanguage = window.localStorage.getItem(LANGUAGE_KEY)
-  || (navigator.language.toLowerCase().startsWith("zh") ? "zh" : "en");
+/* 默认英文；仅在用户手动切换后记住选择 */
+const preferredLanguage = window.localStorage.getItem(LANGUAGE_KEY) || "en";
 
 applyLanguage(preferredLanguage);
 
@@ -33,7 +43,48 @@ toggle?.addEventListener("click", () => {
   applyLanguage(document.documentElement.lang === "zh-CN" ? "en" : "zh");
 });
 
-const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+if (backToTop) {
+  const onScroll = () => backToTop.classList.toggle("visible", window.scrollY > 420);
+  onScroll();
+  window.addEventListener("scroll", onScroll, { passive: true });
+  backToTop.addEventListener("click", () => {
+    window.scrollTo({ top: 0, behavior: reducedMotion ? "auto" : "smooth" });
+  });
+}
+
+/* ---------- Navigation: back-to-top links + active state ---------- */
+const navLinks = [...document.querySelectorAll(".site-header nav a")];
+const workAnchor = document.getElementById("work");
+
+/* #top 锚点指向 sticky header 时浏览器可能不滚动，改用 JS 强制回顶 */
+document.querySelectorAll('a[href="#top"]').forEach((link) => {
+  link.addEventListener("click", (event) => {
+    event.preventDefault();
+    window.scrollTo({ top: 0, behavior: reducedMotion ? "auto" : "smooth" });
+  });
+});
+
+const setActiveNav = (href) => {
+  navLinks.forEach((link) => {
+    const isActive = link.getAttribute("href") === href;
+    link.classList.toggle("nav-active", isActive);
+    if (isActive) link.setAttribute("aria-current", "page");
+    else link.removeAttribute("aria-current");
+  });
+};
+
+navLinks.forEach((link) => {
+  link.addEventListener("click", () => setActiveNav(link.getAttribute("href")));
+});
+
+/* Scroll-spy: 高亮当前浏览区域的导航项 */
+const updateNavSpy = () => {
+  if (!workAnchor) return;
+  const workTop = workAnchor.getBoundingClientRect().top + window.scrollY - 170;
+  setActiveNav(window.scrollY >= workTop ? "#work" : "#top");
+};
+window.addEventListener("scroll", updateNavSpy, { passive: true });
+updateNavSpy();
 
 const carousel = document.querySelector(".hero-carousel");
 
